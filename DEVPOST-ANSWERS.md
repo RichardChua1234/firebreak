@@ -83,24 +83,21 @@ https://github.com/RichardChua1234/firebreak
 ## `*` URL to a working demo, hosted application or test build
 
 ```
-https://github.com/RichardChua1234/firebreak
+https://richardchua1234.github.io/firebreak/
 ```
 
-Firebreak is deliberately a **local CLI**, not a web app — it sits between an agent
-and a wallet, so there is nothing to host and no server that should hold your
-credentials. The repo *is* the test build: clone it and the demo runs in two
-commands with no install, no key and no configuration.
+**A live, hosted, interactive demo.** It runs the real `firebreak` Python package
+compiled to WebAssembly in the browser — the same code as the repo and the test
+suite, not a JavaScript reimplementation. You can edit the policy, compile it into
+rules, evaluate payments, and watch the audit ledger — including deliberately
+editing a stored entry and seeing the hash chain report the break.
 
-A genuinely browser-hosted alternative, if you would rather give judges a URL that
-opens an environment:
+No server, no install, no credentials, nothing uploaded. (First load pulls a ~10 MB
+Python runtime; after that it is cached.)
 
-```
-https://codespaces.new/RichardChua1234/firebreak
-```
-
-That opens a ready GitHub Codespace with the repository loaded — they get a terminal
-and can run the demo immediately. Caveat: it requires judges to have a GitHub
-account, and it spins up a machine for them. The repo URL is the safer default.
+The repository is the test build too: clone it and `python -m firebreak --offline demo`
+runs with zero dependencies, alongside `python -m unittest discover -s tests` for the
+39 tests.
 
 ## Testing instructions or credentials the judges need
 

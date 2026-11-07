@@ -2,6 +2,7 @@
 """Extract the PRELUDE python embedded in index.html and exercise it exactly
 as the browser will. Catches syntax/serving errors before deployment."""
 import json
+import os
 import re
 import sys
 
@@ -84,7 +85,8 @@ for name in listed:
     text = open(path).read()
     for hit in re.finditer(r"^from \. import ([A-Za-z_][\w, ]*)", text, re.M):
         for dep in hit.group(1).split(","):
-            needed.add(dep.strip())
+            # drop any "as alias" — `policy as policy_mod` is still policy
+            needed.add(dep.strip().split()[0])
 missing = sorted(needed - set(listed))
 print(f"  modules the page fetches : {len(listed)}")
 print(f"  sibling imports found    : {sorted(needed)}")

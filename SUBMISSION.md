@@ -7,6 +7,7 @@
 | Submission input | Value |
 |---|---|
 | Public repo | https://github.com/RichardChua1234/firebreak |
+| **Live hosted demo** | **https://richardchua1234.github.io/firebreak/** |
 | Demo video | https://www.youtube.com/watch?v=tJcm_11NUBQ |
 | Gallery images | `gallery/01-thesis` … `05-ledger` (1200×800, 3:2, ~100 KB each) |
 | Licence | MIT (auto-detected by GitHub, visible in About) |
