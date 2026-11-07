@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "firebreak"
+version = "0.1.0"
+description = "A policy-enforced spend guardrail for AI agents. AI proposes, deterministic code disposes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Richard Chua" }]
+keywords = ["ai-agents", "payments", "paypal", "guardrails", "ai-safety", "fintech"]
+dependencies = []                      # deliberately zero
+
+[project.scripts]
+firebreak = "firebreak.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/RichardChua1234/firebreak"
+
+[tool.setuptools.packages.find]
+include = ["firebreak*"]
