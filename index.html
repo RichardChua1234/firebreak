@@ -262,7 +262,10 @@ async function boot_engine() {
       const url = "firebreak/" + m + ".py";
       const r = await fetch(url);
       if (!r.ok) throw new Error(url + " -> HTTP " + r.status);
-      py.FS.writeFile("/app/firebreak/" + m + ".py", await r.text());
+      // Emscripten's FS.writeFile needs an explicit encoding for string data,
+      // otherwise it treats the bytes as binary and throws.
+      py.FS.writeFile("/app/firebreak/" + m + ".py", await r.text(),
+                      {encoding: "utf8"});
     }
 
     boot("Step 3 of 3 — importing…");
@@ -276,9 +279,11 @@ async function boot_engine() {
     $("s1").textContent = "engine ready";
     $("s1").className = "status ok grow";
   } catch (e) {
-    boot("Could not start the engine: " + e.message, "err");
-    boot("This page needs to run from its hosted URL (not a local file) — "
-         + "open https://richardchua1234.github.io/firebreak/", "err");
+    // Never overwrite the real error with a guess at what went wrong.
+    const hint = (location.protocol === "file:")
+      ? "  (this page must be served over http(s) — open the hosted URL, not the file)"
+      : "";
+    boot("Engine failed to start: " + (e && e.message ? e.message : String(e)) + hint, "err");
   }
 }
 
