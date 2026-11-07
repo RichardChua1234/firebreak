@@ -69,5 +69,25 @@ print(f"✓ fb_tamper  -> ok={tam['ok']} problems={tam['problems']}")
 assert tam["ok"] is False, "tampering MUST be detected"
 
 print("\nALL BROWSER-FACING CODE VALIDATED — safe to deploy.")
-mods = re.search(r"const MODULES = \[(.*?)\]", html)
-print(f"  modules the page fetches: {mods.group(1) if mods else '(not found)'}")
+
+# ── the check that would have caught the real deploy failure ───────────
+# The page fetches a HARDCODED module list from the repo. If any fetched
+# module imports a sibling that is not in that list, the browser import fails
+# at runtime while every local test still passes. Verify completeness here.
+mods = re.search(r"const MODULES = \[(.*?)\]", html, re.S)
+listed = [m.strip().strip('"') for m in mods.group(1).replace("\n", " ").split(",") if m.strip()]
+needed = set()
+for name in listed:
+    path = f"/opt/data/paypal-hack/firebreak/{name}.py"
+    if not os.path.exists(path):
+        sys.exit(f"page lists firebreak/{name}.py but that file does not exist")
+    text = open(path).read()
+    for hit in re.finditer(r"^from \. import ([A-Za-z_][\w, ]*)", text, re.M):
+        for dep in hit.group(1).split(","):
+            needed.add(dep.strip())
+missing = sorted(needed - set(listed))
+print(f"  modules the page fetches : {len(listed)}")
+print(f"  sibling imports found    : {sorted(needed)}")
+if missing:
+    sys.exit(f"FAIL: page omits {missing} — the browser import would fail at runtime")
+print("✓ module list is complete — no missing sibling imports")

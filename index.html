@@ -163,7 +163,11 @@
 
 <script src="https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js"></script>
 <script>
-const MODULES = ["__init__","models","policy","risk","ledger"];
+// Every module the package imports must be listed here, or the browser import
+// fails at runtime (policy.py imports llm, for instance). __main__ is an entry
+// point and is never imported, so it is deliberately absent.
+const MODULES = ["__init__","cli","demo","guard","ledger","llm","models",
+                 "paypal_api","policy","risk"];
 let py = null;
 const $ = id => document.getElementById(id);
 const boot = (msg, cls) => {
