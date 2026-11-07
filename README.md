@@ -12,6 +12,15 @@ and keeps a tamper-evident record of every decision it made.
 Built for the **PayPal AI Hackathon 2026**. PayPal integration is central, not
 decorative: the human-approval gate *is* PayPal's own payer consent.
 
+## ▶ [Try it live — no install, nothing to run](https://richardchua1234.github.io/firebreak/)
+
+The hosted demo runs the **real package** below in your browser, compiled to
+WebAssembly via Pyodide — the same code as these tests, not a JavaScript
+reimplementation. Edit the policy, watch it compile into rules you can trace back
+to your own words, evaluate payments, then try editing an entry in the audit
+ledger and watch the hash chain catch it. No server, no credentials, nothing
+uploaded.
+
 ---
 
 ## The 30 seconds that explain it
