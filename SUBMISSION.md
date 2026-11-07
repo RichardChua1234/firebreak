@@ -8,100 +8,149 @@
 |---|---|
 | Public repo | https://github.com/RichardChua1234/firebreak |
 | Demo video | https://www.youtube.com/watch?v=tJcm_11NUBQ |
+| Gallery images | `gallery/01-thesis` … `05-ledger` (1200×800, 3:2, ~100 KB each) |
 | Licence | MIT (auto-detected by GitHub, visible in About) |
-| Commit | `8a721ce` |
-
-### Verified before submitting
-
-- Repo is **public**, anonymous read returns HTTP 200
-- Licence **MIT**, detected by GitHub and shown in the repo About section
-- Video **public** — oEmbed HTTP 200, title *Firebreak*, author *Richard Chua*, and
-  **no `noindex` robots tag** (the marker YouTube puts on unlisted videos)
-- Video **2m44s** — under the 3-minute limit
-- Functional demo runs with **zero installs**: `python -m firebreak --offline demo`
-- **39/39 tests pass**; `python -m unittest discover -s tests`
-- Real PayPal sandbox integration proven (`ORDER_NOT_APPROVED` on capture without
-  payer consent, real order IDs, real approval URLs)
 
 ---
 
-## Paste into the Devpost form
+## 1. `## About the project` — paste this into the markdown field
 
-**Project name**
-```
-Firebreak — a policy-enforced spend guardrail for AI agents
-```
+```markdown
+## Inspiration
 
-**Elevator pitch** (≤200 chars)
-```
-Agents can move money now, and nobody will let them. Firebreak turns a plain-English spending policy into enforceable rules: AI proposes, deterministic code disposes. Every verdict is audited.
-```
+2026 is the year agents got wallets. Every demo I saw showed an agent
+successfully buying something — and almost none showed one being *stopped*.
+That asymmetry is the whole problem. The blocker for autonomous spending isn't
+capability, it's trust, and the two options on the table are both useless:
+block everything, or hand the agent a live card and hope.
 
-**Inspiration**
-```
-2026 is the year agents got wallets. Every demo shows an agent buying something; almost none show one being stopped. The real blocker isn't capability, it's trust — and today's options are "block everything" or "hand it a live card and hope." We wanted the missing middle: let an agent spend inside limits a human wrote, refuse the rest, and leave a record you can audit. PayPal makes that real rather than simulated, because the human-approval gate is PayPal's own payer consent.
-```
+I wanted the missing middle. Let an agent spend inside limits a human wrote in
+plain English, refuse everything else, and leave a record you can audit
+afterwards. What makes PayPal the right substrate is that its own payer consent
+*is* the human gate. I didn't have to build one — I had to stop bypassing it.
 
-**What it does**
-```
+## What it does
+
 You write your spending policy as a sentence:
 
-"Never pay more than $50 without asking me. Hard limit of $300 a day and $2000 a month. Never pay sketchy-ads-ltd. Only use USD. If I've never paid a merchant before, check with me first."
+> "Never pay more than $50 without asking me. Hard limit of $300 a day and
+> $2000 a month. Never pay sketchy-ads-ltd. Only use USD. If I've never paid a
+> merchant before, check with me first."
 
-Firebreak compiles it into enforceable rules — and prints the mapping, each rule annotated with the fragment of your own sentence it came from, so you audit the interpretation instead of trusting it.
+Firebreak compiles that into 6 enforceable rules, and prints the mapping — each
+rule annotated with the fragment of your own sentence it came from. You audit
+the interpretation instead of trusting it.
 
-Then every payment an agent requests gets one of three verdicts: AUTO_APPROVE (inside every limit), ESCALATE (held for an explicit human decision; nothing moves), or BLOCK (refused before anything is created).
+Every payment an agent then requests gets one of three verdicts:
 
-A risk engine runs alongside the policy — duplicate charges, quiet price creep, amount outliers, payment velocity. Risk can escalate a payment to a human; it can never auto-approve one.
+- **AUTO_APPROVE** — inside every limit.
+- **ESCALATE** — held for an explicit human decision. A real PayPal order is
+  created and the approval URL surfaced. Nothing moves.
+- **BLOCK** — refused before anything exists. No order is created at all.
 
-Every verdict, including refusals, is appended to a hash-chained tamper-evident ledger. Editing history is detectable, and the demo proves it live.
+Running alongside is a risk engine: duplicate charges, quiet price creep, amount
+outliers, payment velocity. Risk can escalate a payment to a human. It can never
+auto-approve one.
 
-Against the real PayPal sandbox: a BLOCK verdict creates no order at all, an ESCALATE verdict creates a real order and prints PayPal's own approval URL, and PayPal itself refuses the capture with ORDER_NOT_APPROVED until the payer consents.
-```
+Every verdict — including every refusal — is appended to a hash-chained,
+tamper-evident ledger.
 
-**How we built it**
-```
-Python standard library only — zero dependencies, so a judge can clone and run it with no pip install at all. PayPal Orders v2 for the checkout path (the human approves in PayPal) and PayPal Payouts v1 for the autonomous path.
+## How we built it
 
-The core design decision was where NOT to use a model. A model is used in exactly three places, all of them about language: parsing an English payment request, compiling an English policy into rules, and phrasing a risk finding. The decision itself is a pure deterministic function of (policy, request, history) — same inputs, same verdict, every time.
+Python standard library only. Zero dependencies, so anyone can clone and run it
+with no install at all: `python -m firebreak --offline demo`
 
-39 unit tests, also dependency-free, covering the awkward cases: the exact ceiling boundary, one cent over, block-beats-escalate, risk findings never auto-approving, an unapproved order being uncapturable, and both ledger tampering and record deletion.
-```
+PayPal Orders v2 for the human-approval path, PayPal Payouts v1 for the
+autonomous path.
 
-**Challenges**
-```
-The hardest problem wasn't the payments API — it was deciding where not to use the model. Letting an LLM make the spend decision is the obvious design and the wrong one: "the model decided" is not an answer anyone accepts when money is moving, and you cannot unit-test a vibe. Splitting interpretation (AI) from enforcement (deterministic) is what made the whole thing testable.
+The core design decision was where **not** to use the model. An LLM appears in
+exactly three places, all of them about language: parsing a payment request,
+compiling the policy, and phrasing a risk finding. The decision itself is a pure
+deterministic function of (policy, request, history). Same inputs, same verdict,
+every time. 39 tests, also dependency-free.
 
-Two real bugs were caught by the tests rather than by us. Merchant names were compared literally, so a do-not-pay rule for "sketchy-ads-ltd" silently failed to fire against "Sketchy Ads Ltd" — a guardrail that misses on punctuation is worse than no guardrail. And the risk engine flagged $50 against a historical $15 as a 3.3x outlier, which was correct and which our own test had wrongly assumed should auto-approve.
-```
+## Challenges we ran into
 
-**Accomplishments**
-```
-Telling a payment it may not proceed is the easy half; proving afterwards that you did so consistently is the half that earns trust. A working, testable, dependency-free guardrail with a verifiable audit chain — and an honest line between what the AI does and what the code does — is the part we're proud of.
-```
+The hard part wasn't PayPal's API. It was resisting the obvious design. Letting
+the model make the spend decision is what everyone reaches for, and it's wrong:
+"the model decided" is not an answer anyone accepts when money is moving, and
+you cannot unit-test a vibe. Splitting interpretation (AI) from enforcement
+(arithmetic) is the only reason the thing is testable at all.
 
-**What we learned**
-```
-Guardrails for agents are a language problem wrapped around a determinism problem. The interface has to be English, because that's how humans state intent about money. The enforcement has to be arithmetic, because that's the only thing you can audit.
-```
+Two real bugs were caught by the tests rather than by me. Merchant names were
+compared literally, so a do-not-pay rule for `sketchy-ads-ltd` silently failed
+to fire against "Sketchy Ads Ltd" — a guardrail that misses on punctuation is
+worse than no guardrail. And two test failures turned out to be my *tests* being
+wrong, not the engine: the risk engine had correctly flagged $50 against a
+historical $15 as an outlier, and correctly blocked a $500 charge against a $300
+daily cap.
 
-**What's next**
-```
-Per-merchant limits, approval routed to Slack/WhatsApp, a pending-approval web UI, signed ledger entries, and a policy simulator that replays real history against a candidate policy before you adopt it.
-```
+## Accomplishments we're proud of
 
-**Built with**
-```
-python, paypal-orders-api, paypal-payouts-api, urllib, hashlib, decimal, unittest
+Telling a payment it may not proceed is the easy half. Proving afterwards that
+you refused *consistently* is the half that earns trust. What exists is a
+guardrail with a genuinely verified PayPal integration — real sandbox orders,
+real approval URLs, a real HTTP 422 `ORDER_NOT_APPROVED` when capture is
+attempted without payer consent — an audit chain you can break on purpose
+against, and an honest line drawn between what the AI does and what the code
+does.
+
+## What we learned
+
+Guardrails for agents are a language problem wrapped around a determinism
+problem. The interface has to be English, because that's how people state intent
+about money. The enforcement has to be arithmetic, because that's the only thing
+you can audit. Getting that boundary wrong in either direction is what makes
+agent payments either unusable or unsafe.
+
+## What's next for Firebreak
+
+Per-merchant limits. Approval routed to Slack or WhatsApp, so the human gate
+reaches you where you already are. A pending-approval web UI. Signed ledger
+entries. And a policy simulator that replays your real spending history against
+a candidate policy before you adopt it.
 ```
 
 ---
+
+## 2. `Built with` tags (paste into the tags box)
+
+```
+python, paypal-api, paypal-orders-v2, paypal-payouts-v1, hashlib,
+hmac-sha256, decimal, unittest, urllib, jsonl, cli, python-stdlib, rest-api
+```
+
+## 3. `"Try it out" links`
+
+```
+https://github.com/RichardChua1234/firebreak
+```
+
+## 4. Project Media — upload these five, in order
+
+`gallery/01-thesis`, `02-policy`, `03-verdicts`, `04-paypal-proof`, `05-ledger`
+— all 1200×800 (3:2, what Devpost asks for), ~97–129 KB, well under the 5 MB cap.
+
+Then the demo video: **https://www.youtube.com/watch?v=tJcm_11NUBQ** (2m44s, public).
+
+---
+
+## Verified before submitting
+
+- Repo **public**, anonymous read HTTP 200; licence **MIT**, shown in About
+- Video **public** — oEmbed 200, no `noindex` tag (the marker YouTube puts on
+  unlisted videos); 2m44s, under the 3-minute cap
+- `python -m firebreak --offline demo` runs with **zero installs**
+- **39/39 tests pass** — `python -m unittest discover -s tests`
+- Live PayPal sandbox: real order `8RA78568F87831317`, real approval URL,
+  capture refused `ORDER_NOT_APPROVED` / HTTP 422, order left `CREATED`
+- Ledger: 4 entries, chain integrity OK
 
 ## The only remaining step
 
-Click **Submit project** on https://paypalaihackathon.devpost.com/, paste the above,
-attach the repo URL and the YouTube URL, and submit.
+**Submit project** on https://paypalaihackathon.devpost.com/, paste the above,
+attach the five gallery images, the repo link and the YouTube URL.
 
-If the page shows **"Join hackathon"** rather than "Submit project", that click is
-still pending — it is the step that accepts the Official Rules, and it must happen
-before a submission can be made.
+If the page shows **"Join hackathon"** rather than "Submit project", that click
+is still pending — it is the step that accepts the Official Rules, and a
+submission cannot be made without it.
