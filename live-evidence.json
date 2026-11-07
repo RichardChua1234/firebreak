@@ -1,0 +1,81 @@
+{
+  "base": "https://api-m.sandbox.paypal.com",
+  "steps": [
+    {
+      "step": "block",
+      "action": "BLOCK",
+      "order_created": false,
+      "reasons": [
+        "Sketchy Ads Ltd is on the do-not-pay list"
+      ]
+    },
+    {
+      "step": "escalate",
+      "action": "ESCALATE",
+      "order_id": "8RA78568F87831317",
+      "approve_url": "https://www.sandbox.paypal.com/checkoutnow?token=8RA78568F87831317",
+      "reasons": [
+        "180.00 USD exceeds the 50 USD auto-approval ceiling"
+      ]
+    }
+  ],
+  "auth": "ok",
+  "policy_rules": [
+    {
+      "rule_id": "r1",
+      "kind": "require_approval_above",
+      "params": {
+        "amount": "50",
+        "currency": "USD"
+      },
+      "source": "Never pay more than $50 without asking me."
+    },
+    {
+      "rule_id": "r2",
+      "kind": "daily_cap",
+      "params": {
+        "amount": "300",
+        "currency": "USD"
+      },
+      "source": "Hard limit of $300 a day and $2000 a month."
+    },
+    {
+      "rule_id": "r3",
+      "kind": "monthly_cap",
+      "params": {
+        "amount": "2000",
+        "currency": "USD"
+      },
+      "source": "Hard limit of $300 a day and $2000 a month."
+    },
+    {
+      "rule_id": "r4",
+      "kind": "merchant_block",
+      "params": {
+        "merchants": [
+          "sketchyadsltd"
+        ]
+      },
+      "source": "Never pay sketchy-ads-ltd."
+    },
+    {
+      "rule_id": "r5",
+      "kind": "currency_allow",
+      "params": {
+        "currencies": [
+          "USD"
+        ]
+      },
+      "source": "Only use USD."
+    }
+  ],
+  "capture_without_consent": {
+    "issue": "ORDER_NOT_APPROVED",
+    "http": 422
+  },
+  "order_status_after": "CREATED",
+  "ledger": {
+    "entries": 4,
+    "integrity_ok": true
+  }
+}

@@ -129,14 +129,26 @@ class Firebreak:
         # orders mode
         order = self.paypal.create_order(request)
         if decision.needs_human:
+            url = self.paypal.approve_url(order)
             self.ledger.append("awaiting_human", {
                 "order_id": order.get("id"), "request": request.to_dict(),
-                "reasons": decision.reasons,
-                "approve_url": self.paypal.approve_url(order)})
-            return decision, order
+                "reasons": decision.reasons, "approve_url": url})
+            # surface the approval URL on the returned object so callers (and the
+            # CLI) can send the human straight to PayPal's own consent page
+            return decision, {**order, "approve_url": url}
 
-        # auto-approved: proceed to capture (in sandbox the payer still consents)
-        captured = self.paypal.capture_order(order["id"])
+        # auto-approved by policy: proceed to capture. The payer's own consent is
+        # still required by PayPal, so a refusal here is PayPal enforcing the gate
+        # rather than a Firebreak failure -- and it is recorded as such.
+        try:
+            captured = self.paypal.capture_order(order["id"])
+        except PayPalError as exc:
+            self.ledger.append("capture_blocked", {
+                "order_id": order.get("id"), "request": request.to_dict(),
+                "error": str(exc), "approve_url": self.paypal.approve_url(order)})
+            decision.reasons.append(f"PayPal still requires the payer's consent: {exc}")
+            return decision, {"status": "AWAITING_PAYER_CONSENT", "id": order.get("id"),
+                              "approve_url": self.paypal.approve_url(order), "error": str(exc)}
         self.ledger.append("executed", {"order_id": order.get("id"), "request": request.to_dict(),
                                         "result": captured, "approved_by": "policy"})
         return decision, captured

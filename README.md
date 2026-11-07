@@ -152,6 +152,33 @@ The approval that releases a payment is **PayPal's own payer consent**, and the
 ledger records who confirmed it. The gate is not a simulation of a control — it
 *is* the control.
 
+### Verified against the real sandbox
+
+`python final_sandbox_evidence.py` drives the whole loop against
+`api-m.sandbox.paypal.com` — this is the run the demo video shows. It proves, with
+real API responses:
+
+- an OAuth token is issued → the credentials are genuinely valid
+- a **BLOCK** verdict creates **no order at all** — the API is never called
+- an **ESCALATE** verdict creates a **real order** and prints PayPal's own
+  approval URL, e.g. `https://www.sandbox.paypal.com/checkoutnow?token=...`
+- **PayPal refuses the capture** until the payer consents —
+  `ORDER_NOT_APPROVED`, HTTP 422, order still `CREATED`. The gate is PayPal's, not ours.
+- the ledger chain verifies
+
+Machine-readable output lands in `live-evidence.json`.
+
+> **A note on sandbox:** a fresh sandbox account has no payment history, so
+> Firebreak's *"never paid this merchant before"* rule escalates everything. That
+> is the correct behaviour, and the risk engine says plainly that it has no history
+> to compare against rather than inventing one.
+
+### Demo video
+
+`demo/firebreak-demo.mp4` — 2m44s, a rendering of a genuine recorded run. Every
+line in it is real captured stdout, including the live PayPal responses; the video
+says so on screen. Rebuild it with `python make_video.py`.
+
 ### Modes
 
 - `--mode orders` (default) — PayPal Orders v2 checkout. The human approves in PayPal.

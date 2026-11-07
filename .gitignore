@@ -10,4 +10,6 @@ dist/
 *.jsonl
 !example-ledger.jsonl
 .env
+.env.*
+!.env.example
 .pytest_cache/
